@@ -1,12 +1,16 @@
 import Banner from "../componenets/Banner";
+import NewsList from "../componenets/NewsList";
 
 
 const HomePage = () => {
-    return (
-        <div className=" flex items-center justify-center bg-gray-100">
-        <Banner/>
+  return (
+    <div>
+      <div className="mb-10">
+        <Banner />
       </div>
-    );
+      <NewsList />
+    </div>
+  );
 };
 
 export default HomePage;
