@@ -1,13 +1,13 @@
-import { configureStore } from '@reduxjs/toolkit';
-// Adjust the path as needed
-import newsReducer from './features/newsSlice'; // Adjust the path to the actual location of newsReducer
+import { configureStore } from "@reduxjs/toolkit";
+import newsReducer from "./features/newsSlice"; // Redux Slice import
 
-const store = configureStore({
-    reducer: {
-      news: newsReducer,
-    },
-  });
-  
-  export type RootState = ReturnType<typeof store.getState>;
-  export type AppDispatch = typeof store.dispatch;
-  export default store;
+export const store = configureStore({
+  reducer: {
+    news: newsReducer, // Reducers added here
+  },
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+
+export default store; // ✅ Default export added
