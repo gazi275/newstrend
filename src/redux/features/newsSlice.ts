@@ -1,5 +1,20 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
+
+const EXPIRY_TIME = 12 * 60 * 60 * 1000; // 12 hours
+
+const getStoredData = (key: string) => {
+  const data = JSON.parse(localStorage.getItem(key) || "null");
+  if (data && Date.now() - data.timestamp < EXPIRY_TIME) {
+    return data.items;
+  }
+  return null;
+};
+
+const storeData = (key: string, items: any) => {
+  localStorage.setItem(key, JSON.stringify({ items, timestamp: Date.now() }));
+};
 
 export interface NewsItem {
   news_id: string;
@@ -9,64 +24,170 @@ export interface NewsItem {
   link?: string;
   description?: string;
   comments: string[];
-  reaction?: string;
+  userReaction?: string;
+  reactions: { [key: string]: number };
+  type: string;
+  
+}
+interface SignupResponse {
+  user: User;
+}
+
+interface User {
+  id: string;
+  username: string;
+  email: string;
 }
 
 interface NewsState {
   news: NewsItem[];
+  internationalNews: NewsItem[];
+  user: User | null;
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
+  loading: boolean;
 }
 
 const initialState: NewsState = {
-  news: [],
+  news: getStoredData("localNews") || [],
+  internationalNews: getStoredData("internationalNews") || [],
+  user: getStoredData("user") || null,
   status: "idle",
   error: null,
+  loading: false,
 };
 
-// 🔹 Fetch News Data
 export const fetchNews = createAsyncThunk("news/fetchNews", async (_, { rejectWithValue }) => {
   try {
-    const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
-    console.log(API_KEY); // ✅ Check Environment Variable
-    const API_URL = `https://newsdata.io/api/1/news?apikey=${API_KEY}&country=bd&language=en`;
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const storedNews = getStoredData("localNews");
+    if (storedNews) return storedNews;
 
-    const response = await axios.get<{ results: NewsItem[] }>(API_URL);
+    const API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
+    const response = await axios.get("https://gnews.io/api/v4/top-headlines", {
+      params: { token: API_KEY, lang: "en", max: 100 },
+    });
 
-    if (!response.data.results) {
-      throw new Error("No news data available");
-    }
+    type GNewsApiResponse = {
+      articles: Array<{
+        url: string;
+        title: string;
+        content?: string;
+        image?: string;
+        description?: string;
+      }>;
+    };
 
-    return (response.data.results || []).map((news) => ({
-      ...news,
-      news_id: news.news_id || Math.random().toString(36).substr(2, 9), // ✅ Ensure `news_id` exists
-      image_url: news.image_url || "https://via.placeholder.com/300",
-      comments: news.comments || [],
+    const formattedNews = (response.data as GNewsApiResponse).articles.map((news) => ({
+      news_id: news.url || Math.random().toString(36).substr(2, 9),
+      title: news.title,
+      content: news.content || "No content available",
+      image_url: news.image || "https://via.placeholder.com/300",
+      link: news.url,
+      description: news.description || "No description available",
+      comments: [],
+      userReaction: undefined,
+      reactions: {},
+      type: "local",
     }));
+
+    storeData("localNews", formattedNews);
+    return formattedNews;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || "Failed to fetch news");
   }
 });
 
-// 🔹 Redux Slice
+export const fetchInternationalNews = createAsyncThunk("news/fetchInternationalNews", async (_, { rejectWithValue }) => {
+  try {
+    const storedNews = getStoredData("internationalNews");
+    if (storedNews) return storedNews;
+
+    const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
+    const response = await axios.get("https://newsapi.org/v2/top-headlines", {
+      params: { apiKey: API_KEY, category: "general", language: "en", pageSize: 100 },
+    });
+
+    const formattedNews = (response.data as { articles: any[] }).articles.map((news: any) => ({
+      news_id: news.url || Math.random().toString(36).substr(2, 9),
+      title: news.title,
+      content: news.content || "No content available",
+      image_url: news.urlToImage || "https://via.placeholder.com/300",
+      link: news.url,
+      description: news.description || "No description available",
+      comments: [],
+      userReaction: undefined,
+      reactions: {},
+      type: "international",
+    }));
+
+    storeData("internationalNews", formattedNews);
+    return formattedNews;
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data?.message || "Failed to fetch international news");
+  }
+});
+
+export const loginUser = createAsyncThunk("user/login", async (credentials: { email: string; password: string }, { rejectWithValue }) => {
+  try {
+    const response = await axios.post<{ user: User }>("http://localhost:5000/api/v1/auth/login", credentials);
+    
+    console.log("Full response data:", response.data); // Debugging
+    console.log("Extracted user:", response.data.data.user); 
+    const user = response.data.data.user;
+   
+   
+    storeData("user", user);
+console.log("Stored user:", user);
+    return response.data.user;
+  } catch (error: any) {
+    return rejectWithValue(error.response?.data?.message || "Failed to login");
+  }
+});
+
+export const signupUser = createAsyncThunk(
+  "user/signup",
+  async (userData: { name: string; email: string; password: string }, { rejectWithValue }) => {
+    try {
+      // Specify the response type here
+      const response = await axios.post<SignupResponse>("http://localhost:5000/api/v1/auth/signup", userData);
+      storeData("user", response.data.user);
+      return response.data.user;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "Failed to signup");
+    }
+  }
+);
+
 const newsSlice = createSlice({
   name: "news",
   initialState,
   reducers: {
-    addComment: (state, action: PayloadAction<{ newsId: string; comment: string }>) => {
-      const { newsId, comment } = action.payload;
-      const newsItem = state.news.find((item) => item.news_id === newsId);
+    addComment: (state, action: PayloadAction<{ newsId: string; comment: string; type: string }>) => {
+      const newsList = action.payload.type === "local" ? state.news : state.internationalNews;
+      const newsItem = newsList.find((news) => news.news_id === action.payload.newsId);
       if (newsItem) {
-        newsItem.comments.push(comment);
+        newsItem.comments.push(action.payload.comment);
+        storeData(`${action.payload.type}News`, newsList);
       }
     },
-    addReaction: (state, action: PayloadAction<{ newsId: string; reaction: string }>) => {
-      const { newsId, reaction } = action.payload;
-      const newsItem = state.news.find((item) => item.news_id === newsId);
+    addReaction: (state, action: PayloadAction<{ newsId: string; reaction: string; type: string }>) => {
+      const newsList = action.payload.type === "local" ? state.news : state.internationalNews;
+      const newsItem = newsList.find((news) => news.news_id === action.payload.newsId);
       if (newsItem) {
-        newsItem.reaction = reaction; // Set new reaction
+        if (newsItem.userReaction) {
+          newsItem.reactions[newsItem.userReaction] -= 1;
+          if (newsItem.reactions[newsItem.userReaction] === 0) {
+            delete newsItem.reactions[newsItem.userReaction];
+          }
+        }
+        newsItem.userReaction = action.payload.reaction;
+        newsItem.reactions[action.payload.reaction] = (newsItem.reactions[action.payload.reaction] || 0) + 1;
+        storeData(`${action.payload.type}News`, newsList);
       }
+    },
+    logoutUser: (state) => {
+      state.user = null;
+      localStorage.removeItem("user");
     },
   },
   extraReducers: (builder) => {
@@ -81,9 +202,44 @@ const newsSlice = createSlice({
       .addCase(fetchNews.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;
+      })
+      .addCase(fetchInternationalNews.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(fetchInternationalNews.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.internationalNews = action.payload;
+      })
+      .addCase(fetchInternationalNews.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      })
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;  // ✅ Start loading
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading = false;  // ✅ Stop loading
+        state.user = action.payload;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;  // ✅ Stop loading
+        state.error = action.payload as string;
+      })
+      .addCase(signupUser.pending, (state) => {
+        state.loading = true;  // ✅ Start loading
+        state.error = null;
+      })
+      .addCase(signupUser.fulfilled, (state, action) => {
+        state.loading = false;  // ✅ Stop loading
+        state.user = action.payload;
+      })
+      .addCase(signupUser.rejected, (state, action) => {
+        state.loading = false;  // ✅ Stop loading
+        state.error = action.payload as string;
       });
   },
 });
 
-export const { addComment, addReaction } = newsSlice.actions;
+export const { addComment, addReaction, logoutUser } = newsSlice.actions;
 export default newsSlice.reducer;

@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import RootLayout from "./layout/RootLayout";
 import SignUp from "./pages/SignUp";
 import NewsDetails from "./pages/NewsDetails";
+import InternationalNews from "./pages/InternationalNews";
 
 
 const router = createBrowserRouter([
@@ -15,7 +16,8 @@ const router = createBrowserRouter([
       { path: "", element: <HomePage /> },
       { path: "login", element: <Login /> },
       { path: "signup", element: <SignUp /> },
-      { path:"/news/:newsId", element:<NewsDetails /> }
+      { path:"/news/:newsId", element:<NewsDetails /> },
+      { path:"/international-news", element:<InternationalNews />} 
     ],
   },
 ]);

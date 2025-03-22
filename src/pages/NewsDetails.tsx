@@ -9,11 +9,13 @@ const NewsDetails = () => {
   const [newsItem, setNewsItem] = useState(() =>
     allNews.find((item) => item.news_id === newsId)
   );
+  console.log(allNews);
 
-  // Redux store refresh হলে LocalStorage থেকে ডাটা নিয়ে আসবে
+  
   useEffect(() => {
     if (!newsItem) {
       const savedNews = JSON.parse(localStorage.getItem("newsData") || "[]");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const foundNews = savedNews.find((item: any) => item.news_id === newsId);
       if (foundNews) setNewsItem(foundNews);
     }
@@ -32,7 +34,7 @@ const NewsDetails = () => {
         className="w-full h-80 object-cover rounded-lg"
       />
       
-      {/* Title */}
+    
       <h1 className="text-2xl font-bold mt-4">{newsItem.title}</h1>
       
       {/* Description */}

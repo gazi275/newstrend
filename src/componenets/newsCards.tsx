@@ -12,7 +12,7 @@ import {
 import Picker from "@emoji-mart/react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { addReaction, addComment } from "../redux/features/newsSlice"; // ✅ FIXED IMPORT
+import { addComment, addReaction } from "../redux/features/newsSlice";
 import { RootState } from "../redux/store";
 
 interface NewsCardProps {
@@ -20,6 +20,7 @@ interface NewsCardProps {
   image_url: string;
   title: string;
   description?: string;
+  type?: "local" | "international"; 
 }
 
 const reactions = [
@@ -30,33 +31,43 @@ const reactions = [
   { name: "Sad", icon: <FrownOutlined />, emoji: "😢" },
 ];
 
-const NewsCard = ({ news_id, image_url, title, description }: NewsCardProps) => {
+const NewsCard = ({ news_id, image_url, title, description, type = "local" }: NewsCardProps) => {
   const dispatch = useDispatch();
   const [commentInput, setCommentInput] = useState("");
   const [showCommentPicker, setShowCommentPicker] = useState(false);
   const [showReactPicker, setShowReactPicker] = useState(false);
 
+  // ✅ Redux Theke Data Fetch Kore
   const newsItem = useSelector((state: RootState) =>
-    state.news.news.find((item) => item.news_id === news_id)
+    type === "local"
+      ? state.news.news.find((item) => item.news_id === news_id)
+      : state.news.internationalNews.find((item) => item.news_id === news_id)
   );
-  const comments = newsItem?.comments || [];
-  const userReaction = newsItem?.reaction || null;
+
+  if (!newsItem) {
+    return null; // No News Found Case Handle
+  }
+
+  const comments = newsItem.comments || [];
+  const reactionsData = newsItem.reactions || {};
+  const userReaction = Object.keys(reactionsData).find((r) => reactionsData[r] > 0) || null;
 
   const handleComment = () => {
     if (commentInput.trim() !== "") {
-      dispatch(addComment({ newsId: news_id, comment: commentInput }));
+      dispatch(addComment({ newsId: news_id, comment: commentInput, type }));
       setCommentInput("");
     }
   };
 
   const handleReaction = (reaction: string) => {
-    dispatch(addReaction({ newsId: news_id, reaction }));
-    setShowReactPicker(false);
+    if (!newsItem.reactions[reaction]) {
+      dispatch(addReaction({ newsId: news_id, reaction, type }));
+      setShowReactPicker(false);
+    }
   };
 
   return (
-    <Card hoverable className="shadow-lg rounded-xl">
-      {/* ✅ Wrap Only Image & Title in <Link> */}
+    <Card hoverable className="relative shadow-lg rounded-xl">
       <Link to={`/news/${news_id}`} className="block">
         <img alt={title} src={image_url} className="h-60 w-full object-cover rounded-t-xl" />
       </Link>
@@ -64,19 +75,16 @@ const NewsCard = ({ news_id, image_url, title, description }: NewsCardProps) => 
       <div className="flex items-center gap-3 mb-3">
         <Avatar size="large" icon={<UserOutlined />} />
         <div>
-          {/* ✅ Wrap Title in <Link> */}
           <Link to={`/news/${news_id}`} className="text-lg font-semibold hover:underline">
             {title}
           </Link>
-          <p className="text-gray-500 text-sm">Published Today</p>
+          <p className="text-gray-500 text-sm">{type === "local" ? "Published Today" : "International News"}</p>
         </div>
       </div>
 
       <p className="text-gray-600">{description?.slice(0, 100)}...</p>
 
-      {/* ✅ Reaction & Comment Buttons */}
       <div className="flex justify-between items-center mt-4">
-        {/* Reaction Button */}
         <div className="relative">
           <Tooltip title="React">
             <Button onClick={() => setShowReactPicker(!showReactPicker)}>
@@ -84,23 +92,21 @@ const NewsCard = ({ news_id, image_url, title, description }: NewsCardProps) => 
             </Button>
           </Tooltip>
           {showReactPicker && (
-            <div className="absolute bg-white shadow-lg rounded-md p-2 flex gap-2">
+            <div className="absolute bg-white shadow-lg rounded-md p-2 flex gap-2 border z-50" style={{ bottom: "100%", left: "0%" }}>
               {reactions.map((react) => (
                 <Button key={react.name} onClick={() => handleReaction(react.emoji)}>
-                  {react.emoji}
+                  {react.emoji} {reactionsData[react.emoji] || 0}
                 </Button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Comment Button */}
         <Tooltip title="Comment">
           <Button icon={<MessageOutlined />}>{comments.length}</Button>
         </Tooltip>
       </div>
 
-      {/* ✅ Comment Section */}
       <div className="mt-4">
         <Input.TextArea
           value={commentInput}
