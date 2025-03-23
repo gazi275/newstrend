@@ -137,8 +137,8 @@ export const loginUser = createAsyncThunk("user/login", async (credentials: { em
    
    
     storeData("user", user);
-console.log("Stored user:", user);
-    return response.data.user;
+   console.log("Stored user:", user);
+    return user;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || "Failed to login");
   }

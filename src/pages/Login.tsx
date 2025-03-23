@@ -60,7 +60,7 @@ const Login = () => {
               className="uppercase block w-full p-4 text-lg rounded-full bg-indigo-500 hover:bg-indigo-600"
               disabled={loading}
             >
-              {loading ? "Logging in..." : "Sign In"}
+              {loading ? "Logging in..." : "Log In"}
             </button>
           </form>
         </div>
