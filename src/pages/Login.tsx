@@ -55,6 +55,18 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <div className="text-right text-gray-400 hover:underline hover:text-gray-100">
+              <a href="#">Forgot your password?</a>
+            </div>
+            <p className="mt-4 text-center text-gray-400">
+          Don't have an account?{" "}
+          <button
+            onClick={() => navigate("/signup")}
+            className="text-indigo-400 hover:underline"
+          >
+            Sign Up
+          </button>
+        </p>
             <button
               type="submit"
               className="uppercase block w-full p-4 text-lg rounded-full bg-indigo-500 hover:bg-indigo-600"

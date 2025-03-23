@@ -48,9 +48,7 @@ const SignUp = () => {
                             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="block w-full p-4 text-lg rounded-sm bg-black text-white" />
                         </div>
                         {error && <p className="text-red-500">{error}</p>}
-                        <div className="text-right text-gray-400 hover:underline hover:text-gray-100">
-                            <a href="#">Forgot your password?</a>
-                        </div>
+                        
                         <div className="px-4 pb-2 pt-4">
                             <button type="submit" className="uppercase block w-full p-4 text-lg rounded-full bg-indigo-500 hover:bg-indigo-600 focus:outline-none">
                                 Sign Up
