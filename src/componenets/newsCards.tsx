@@ -20,7 +20,7 @@ interface NewsCardProps {
   image_url: string;
   title: string;
   description?: string;
-  type?: "local" | "international"; 
+  type?: "local" | "international";
 }
 
 const reactions = [
@@ -37,16 +37,13 @@ const NewsCard = ({ news_id, image_url, title, description, type = "local" }: Ne
   const [showCommentPicker, setShowCommentPicker] = useState(false);
   const [showReactPicker, setShowReactPicker] = useState(false);
 
-  // ✅ Redux Theke Data Fetch Kore
   const newsItem = useSelector((state: RootState) =>
     type === "local"
       ? state.news.news.find((item) => item.news_id === news_id)
       : state.news.internationalNews.find((item) => item.news_id === news_id)
   );
 
-  if (!newsItem) {
-    return null; // No News Found Case Handle
-  }
+  if (!newsItem) return null;
 
   const comments = newsItem.comments || [];
   const reactionsData = newsItem.reactions || {};
@@ -66,16 +63,19 @@ const NewsCard = ({ news_id, image_url, title, description, type = "local" }: Ne
     }
   };
 
+  const encodedId = encodeURIComponent(news_id);
+  const newsLink = type === "international" ? `/international-news/${encodedId}` : `/news/${news_id}`;
+
   return (
     <Card hoverable className="relative shadow-lg rounded-xl">
-      <Link to={`/news/${news_id}`} className="block">
+      <Link to={newsLink} className="block">
         <img alt={title} src={image_url} className="h-60 w-full object-cover rounded-t-xl" />
       </Link>
 
       <div className="flex items-center gap-3 mb-3">
         <Avatar size="large" icon={<UserOutlined />} />
         <div>
-          <Link to={`/news/${news_id}`} className="text-lg font-semibold hover:underline">
+          <Link to={newsLink} className="text-lg font-semibold hover:underline">
             {title}
           </Link>
           <p className="text-gray-500 text-sm">{type === "local" ? "Published Today" : "International News"}</p>

@@ -58,7 +58,7 @@ const Login = () => {
             <div className="text-right text-gray-400 hover:underline hover:text-gray-100">
               <a href="#">Forgot your password?</a>
             </div>
-            <p className="mt-4 text-center text-gray-400">
+              <p className="mt-4 text-center text-gray-400">
           Don't have an account?{" "}
           <button
             onClick={() => navigate("/signup")}

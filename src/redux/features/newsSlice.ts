@@ -2,7 +2,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const EXPIRY_TIME = 12 * 60 * 60 * 1000; // 12 hours
+const EXPIRY_TIME = 12; 
 
 const getStoredData = (key: string) => {
   const data = JSON.parse(localStorage.getItem(key) || "null");
@@ -57,45 +57,49 @@ const initialState: NewsState = {
   loading: false,
 };
 
-export const fetchNews = createAsyncThunk("news/fetchNews", async (_, { rejectWithValue }) => {
-  try {
-    const storedNews = getStoredData("localNews");
-    if (storedNews) return storedNews;
+export const fetchNews = createAsyncThunk(
+  "news/fetchNews",
+  async (_, { rejectWithValue }) => {
+    try {
+      const storedNews = getStoredData("localNews");
+      if (storedNews) return storedNews;
 
-    const API_KEY = import.meta.env.VITE_GNEWS_API_KEY;
-    const response = await axios.get("https://gnews.io/api/v4/top-headlines", {
-      params: { token: API_KEY, lang: "en", max: 100 },
-    });
+      const API_KEY = import.meta.env.VITE_NEWSDATA_API_KEY;
 
-    type GNewsApiResponse = {
-      articles: Array<{
-        url: string;
-        title: string;
-        content?: string;
-        image?: string;
-        description?: string;
-      }>;
-    };
+      const response = await axios.get("https://newsdata.io/api/1/news", {
+        params: {
+          apikey: API_KEY,
+          country: "bd",   
+          language: "en",  
+          category: "top", 
+        },
+      });
 
-    const formattedNews = (response.data as GNewsApiResponse).articles.map((news) => ({
-      news_id: news.url || Math.random().toString(36).substr(2, 9),
-      title: news.title,
-      content: news.content || "No content available",
-      image_url: news.image || "https://via.placeholder.com/300",
-      link: news.url,
-      description: news.description || "No description available",
-      comments: [],
-      userReaction: undefined,
-      reactions: {},
-      type: "local",
-    }));
+      const newsList = response.data.results || [];
 
-    storeData("localNews", formattedNews);
-    return formattedNews;
-  } catch (error: any) {
-    return rejectWithValue(error.response?.data?.message || "Failed to fetch news");
+      const formattedNews = newsList.map((news: any) => ({
+        news_id: news.article_id || news.link || Math.random().toString(36).substr(2, 9),
+        title: news.title,
+        content: news.content || "No content available",
+        image_url: news.image_url || "https://via.placeholder.com/300",
+        link: news.link,
+        description: news.description || "No description available",
+        comments: [],
+        userReaction: undefined,
+        reactions: {},
+        type: "local",
+      }));
+
+      storeData("localNews", formattedNews);
+      return formattedNews;
+    } catch (error: any) {
+      console.error("❌ Error fetching Bangladesh news:", error);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Failed to fetch local news"
+      );
+    }
   }
-});
+);
 
 export const fetchInternationalNews = createAsyncThunk("news/fetchInternationalNews", async (_, { rejectWithValue }) => {
   try {
