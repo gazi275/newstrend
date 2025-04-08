@@ -36,7 +36,7 @@ const InternationalNews = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentInternationalNews.map((item) => (
-            <NewsCard key={item.news_id} {...item} type="international" />
+            <NewsCard key={item.news_id} {...item} type="international" image_url={item.image_url || "default-image-url.jpg"} />
           ))}
         </div>
       )}

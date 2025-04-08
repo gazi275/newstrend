@@ -2,7 +2,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const EXPIRY_TIME = 12; 
+const EXPIRY_TIME = 12*60*60*1000; // 12 hours
 
 const getStoredData = (key: string) => {
   const data = JSON.parse(localStorage.getItem(key) || "null");
@@ -46,6 +46,8 @@ interface NewsState {
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
   loading: boolean;
+  internationalStatus: string; // Add this property
+  internationalError: string | null;
 }
 
 const initialState: NewsState = {
@@ -55,6 +57,8 @@ const initialState: NewsState = {
   status: "idle",
   error: null,
   loading: false,
+  internationalStatus: "idle",
+  internationalError: null,
 };
 
 export const fetchNews = createAsyncThunk(
@@ -75,13 +79,13 @@ export const fetchNews = createAsyncThunk(
         },
       });
 
-      const newsList = response.data.results || [];
+      const newsList = (response.data as { results: any[] }).results || [];
 
       const formattedNews = newsList.map((news: any) => ({
         news_id: news.article_id || news.link || Math.random().toString(36).substr(2, 9),
         title: news.title,
         content: news.content || "No content available",
-        image_url: news.image_url || "https://via.placeholder.com/300",
+        image_url: news.image_url || "https://media.istockphoto.com/id/1693840855/vector/blank-newspaper-front-page-template.jpg?s=2048x2048&w=is&k=20&c=I1U5L8yLW0EKRftclWcMwBSHWbYfN1LmFcefw2-9H7E=",
         link: news.link,
         description: news.description || "No description available",
         comments: [],
@@ -115,7 +119,7 @@ export const fetchInternationalNews = createAsyncThunk("news/fetchInternationalN
       news_id: news.url || Math.random().toString(36).substr(2, 9),
       title: news.title,
       content: news.content || "No content available",
-      image_url: news.urlToImage || "https://via.placeholder.com/300",
+      image_url: news.urlToImage || "https://media.istockphoto.com/id/1693840855/vector/blank-newspaper-front-page-template.jpg?s=2048x2048&w=is&k=20&c=I1U5L8yLW0EKRftclWcMwBSHWbYfN1LmFcefw2-9H7E=",
       link: news.url,
       description: news.description || "No description available",
       comments: [],
@@ -133,7 +137,9 @@ export const fetchInternationalNews = createAsyncThunk("news/fetchInternationalN
 
 export const loginUser = createAsyncThunk("user/login", async (credentials: { email: string; password: string }, { rejectWithValue }) => {
   try {
-    const response = await axios.post<{ user: User }>("http://localhost:5000/api/v1/auth/login", credentials);
+    const response = await axios.post<{
+      data: any; user: User 
+}>("https://news-backend-sigma.vercel.app/api/v1/auth/login", credentials);
     
     console.log("Full response data:", response.data); // Debugging
     console.log("Extracted user:", response.data.data.user); 
@@ -153,7 +159,7 @@ export const signupUser = createAsyncThunk(
   async (userData: { name: string; email: string; password: string }, { rejectWithValue }) => {
     try {
       // Specify the response type here
-      const response = await axios.post<SignupResponse>("http://localhost:5000/api/v1/auth/signup", userData);
+      const response = await axios.post<SignupResponse>("https://news-backend-sigma.vercel.app/api/v1/auth/signup", userData);
       storeData("user", response.data.user);
       return response.data.user;
     } catch (error: any) {

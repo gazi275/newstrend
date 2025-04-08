@@ -46,7 +46,7 @@ const NewsList = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentNews.map((item) => (
-                <NewsCard key={item.news_id} {...item} type="local" />
+                <NewsCard key={item.news_id} {...item} type="local" image_url={item.image_url || "default-image-url.jpg"} />
               ))}
             </div>
           )}
@@ -65,14 +65,14 @@ const NewsList = () => {
 
         {/* ✅ International News Tab */}
         <Tabs.TabPane tab="International News" key="international">
-          {internationalStatus === "loading" && internationalNews.length === 0 ? (
+          { internationalNews.length === 0 ? (
             <Spin size="large" className="flex justify-center mt-10" />
           ) : internationalStatus === "failed" ? (
             <Alert message="Error" description={internationalError} type="error" showIcon />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentInternationalNews.map((item) => (
-                <NewsCard key={item.news_id} {...item} type="international" />
+                <NewsCard key={item.news_id} {...item} type="international" image_url={item.image_url || "default-image-url.jpg"} />
               ))}
             </div>
           )}

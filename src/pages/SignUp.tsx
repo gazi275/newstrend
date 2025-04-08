@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSelector, useDispatch } from "react-redux"; 
+import {  useDispatch } from "react-redux"; 
 import { useNavigate } from "react-router-dom";
 
 import { signupUser } from "../redux/features/newsSlice";
@@ -25,6 +25,7 @@ const SignUp = () => {
         try {
             await dispatch(signupUser({ name, email, password })).unwrap(); // ✅ Fixed TypeScript error
             navigate("/login"); // Redirect to login after successful signup
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             setError(err.message || "Signup failed, please try again.");
         }
