@@ -45,6 +45,7 @@ interface NewsState {
   loading: boolean;
   internationalStatus: string;
   internationalError: string | null;
+  searchQuery: string;
 }
 
 const initialState: NewsState = {
@@ -56,6 +57,7 @@ const initialState: NewsState = {
   loading: false,
   internationalStatus: "idle",
   internationalError: null,
+  searchQuery: "",
 };
 
 // Fetch local news from your backend
@@ -66,14 +68,21 @@ export const fetchNews = createAsyncThunk(
       const storedNews = getStoredData("localNews");
       if (storedNews) return storedNews;
 
-      const response = await axios.get<{ results: any[] }>("https://news-backend-sigma.vercel.app/api/v1/news/bangladesh");
+      const response = await axios.get<{ results: any[] }>(
+        "https://news-backend-sigma.vercel.app/api/v1/news/bangladesh"
+      );
       const newsList = response.data.results || [];
 
       const formattedNews = newsList.map((news: any) => ({
-        news_id: news.article_id || news.link || Math.random().toString(36).substr(2, 9),
+        news_id:
+          news.article_id ||
+          news.link ||
+          Math.random().toString(36).substr(2, 9),
         title: news.title,
         content: news.content || "No content available",
-        image_url: news.image_url || "https://media.istockphoto.com/id/1693840855/vector/blank-newspaper-front-page-template.jpg?s=2048x2048&w=is&k=20&c=I1U5L8yLW0EKRftclWcMwBSHWbYfN1LmFcefw2-9H7E=",
+        image_url:
+          news.image_url ||
+          "https://media.istockphoto.com/id/1693840855/vector/blank-newspaper-front-page-template.jpg?s=2048x2048&w=is&k=20&c=I1U5L8yLW0EKRftclWcMwBSHWbYfN1LmFcefw2-9H7E=",
         link: news.link,
         description: news.description || "No description available",
         comments: [],
@@ -98,24 +107,32 @@ export const fetchInternationalNews = createAsyncThunk(
       const storedNews = getStoredData("internationalNews");
       if (storedNews) return storedNews;
 
-      const response = await axios.get("https://news-backend-sigma.vercel.app/api/v1/news/international");
-      const formattedNews = (response.data as { articles: any[] }).articles.map((news: any) => ({
-        news_id: news.url || Math.random().toString(36).substr(2, 9),
-        title: news.title,
-        content: news.content || "No content available",
-        image_url: news.urlToImage || "https://media.istockphoto.com/id/1693840855/vector/blank-newspaper-front-page-template.jpg?s=2048x2048&w=is&k=20&c=I1U5L8yLW0EKRftclWcMwBSHWbYfN1LmFcefw2-9H7E=",
-        link: news.url,
-        description: news.description || "No description available",
-        comments: [],
-        userReaction: undefined,
-        reactions: {},
-        type: "international",
-      }));
+      const response = await axios.get(
+        "https://news-backend-sigma.vercel.app/api/v1/news/international"
+      );
+      const formattedNews = (response.data as { articles: any[] }).articles.map(
+        (news: any) => ({
+          news_id: news.url || Math.random().toString(36).substr(2, 9),
+          title: news.title,
+          content: news.content || "No content available",
+          image_url:
+            news.urlToImage ||
+            "https://media.istockphoto.com/id/1693840855/vector/blank-newspaper-front-page-template.jpg?s=2048x2048&w=is&k=20&c=I1U5L8yLW0EKRftclWcMwBSHWbYfN1LmFcefw2-9H7E=",
+          link: news.url,
+          description: news.description || "No description available",
+          comments: [],
+          userReaction: undefined,
+          reactions: {},
+          type: "international",
+        })
+      );
 
       storeData("internationalNews", formattedNews);
       return formattedNews;
     } catch (error: any) {
-      return rejectWithValue(error.message || "Failed to fetch international news");
+      return rejectWithValue(
+        error.message || "Failed to fetch international news"
+      );
     }
   }
 );
@@ -123,7 +140,10 @@ export const fetchInternationalNews = createAsyncThunk(
 // Login user and handle user authentication
 export const loginUser = createAsyncThunk(
   "user/login",
-  async (credentials: { email: string; password: string }, { rejectWithValue }) => {
+  async (
+    credentials: { email: string; password: string },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await axios.post<{ data: any; user: User }>(
         "https://news-backend-sigma.vercel.app/api/v1/auth/login",
@@ -134,7 +154,9 @@ export const loginUser = createAsyncThunk(
       storeData("user", user);
       return user;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || "Failed to login");
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to login"
+      );
     }
   }
 );
@@ -142,7 +164,10 @@ export const loginUser = createAsyncThunk(
 // Signup user and handle user registration
 export const signupUser = createAsyncThunk(
   "user/signup",
-  async (userData: { name: string; email: string; password: string }, { rejectWithValue }) => {
+  async (
+    userData: { name: string; email: string; password: string },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await axios.post<{ user: User }>(
         "https://news-backend-sigma.vercel.app/api/v1/auth/signup",
@@ -151,7 +176,9 @@ export const signupUser = createAsyncThunk(
       storeData("user", response.data.user);
       return response.data.user;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || "Failed to signup");
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to signup"
+      );
     }
   }
 );
@@ -161,17 +188,33 @@ const newsSlice = createSlice({
   name: "news",
   initialState,
   reducers: {
-    addComment: (state, action: PayloadAction<{ newsId: string; comment: string; type: string }>) => {
-      const newsList = action.payload.type === "local" ? state.news : state.internationalNews;
-      const newsItem = newsList.find((news) => news.news_id === action.payload.newsId);
+    setSearchQuery: (state, action: PayloadAction<string>) => {
+      state.searchQuery = action.payload.toLowerCase();
+    },
+
+    addComment: (
+      state,
+      action: PayloadAction<{ newsId: string; comment: string; type: string }>
+    ) => {
+      const newsList =
+        action.payload.type === "local" ? state.news : state.internationalNews;
+      const newsItem = newsList.find(
+        (news) => news.news_id === action.payload.newsId
+      );
       if (newsItem) {
         newsItem.comments.push(action.payload.comment);
         storeData(`${action.payload.type}News`, newsList);
       }
     },
-    addReaction: (state, action: PayloadAction<{ newsId: string; reaction: string; type: string }>) => {
-      const newsList = action.payload.type === "local" ? state.news : state.internationalNews;
-      const newsItem = newsList.find((news) => news.news_id === action.payload.newsId);
+    addReaction: (
+      state,
+      action: PayloadAction<{ newsId: string; reaction: string; type: string }>
+    ) => {
+      const newsList =
+        action.payload.type === "local" ? state.news : state.internationalNews;
+      const newsItem = newsList.find(
+        (news) => news.news_id === action.payload.newsId
+      );
       if (newsItem) {
         if (newsItem.userReaction) {
           newsItem.reactions[newsItem.userReaction] -= 1;
@@ -180,7 +223,8 @@ const newsSlice = createSlice({
           }
         }
         newsItem.userReaction = action.payload.reaction;
-        newsItem.reactions[action.payload.reaction] = (newsItem.reactions[action.payload.reaction] || 0) + 1;
+        newsItem.reactions[action.payload.reaction] =
+          (newsItem.reactions[action.payload.reaction] || 0) + 1;
         storeData(`${action.payload.type}News`, newsList);
       }
     },
@@ -240,5 +284,5 @@ const newsSlice = createSlice({
   },
 });
 
-export const { addComment, addReaction, logoutUser } = newsSlice.actions;
+export const { addComment, addReaction, logoutUser ,setSearchQuery} = newsSlice.actions;
 export default newsSlice.reducer;

@@ -8,31 +8,38 @@ import NewsCard from "./NewsCards";
 const NewsList = () => {
   const dispatch = useDispatch<AppDispatch>();
 
-  // ✅ Redux State Theke Local & International News Fetch Kora
-  const { news, status, error } = useSelector((state: RootState) => state.news);
+  // Redux State
+  const { news, status, error, searchQuery } = useSelector((state: RootState) => state.news);
   const { internationalNews, internationalStatus, internationalError } = useSelector(
     (state: RootState) => state.news
   );
 
   const [currentPage, setCurrentPage] = useState(1);
   const [currentPageInt, setCurrentPageInt] = useState(1);
-  const [activeTab, setActiveTab] = useState("local"); 
-  const pageSize = 6; 
+  const [activeTab, setActiveTab] = useState("local");
+  const pageSize = 6;
 
   useEffect(() => {
-    if (news.length === 0) dispatch(fetchNews()); 
+    if (news.length === 0) dispatch(fetchNews());
     if (internationalNews.length === 0) dispatch(fetchInternationalNews());
   }, [dispatch, news.length, internationalNews.length]);
 
-  // ✅ Pagination Logic for Local News
+  // 🔍 Filter news based on search query
+  const filteredLocalNews = news.filter((item) =>
+    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const filteredInternationalNews = internationalNews.filter((item) =>
+    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Pagination for filtered news
   const indexOfLastNews = currentPage * pageSize;
   const indexOfFirstNews = indexOfLastNews - pageSize;
-  const currentNews = news.slice(indexOfFirstNews, indexOfLastNews);
+  const currentNews = filteredLocalNews.slice(indexOfFirstNews, indexOfLastNews);
 
-  // ✅ Pagination Logic for International News
   const indexOfLastIntNews = currentPageInt * pageSize;
   const indexOfFirstIntNews = indexOfLastIntNews - pageSize;
-  const currentInternationalNews = internationalNews.slice(indexOfFirstIntNews, indexOfLastIntNews);
+  const currentInternationalNews = filteredInternationalNews.slice(indexOfFirstIntNews, indexOfLastIntNews);
 
   return (
     <div className="p-4">
@@ -51,12 +58,12 @@ const NewsList = () => {
             </div>
           )}
 
-          {/* ✅ Local News Pagination */}
+          {/* Pagination */}
           <div className="flex justify-center mt-6">
             <Pagination
               current={currentPage}
               pageSize={pageSize}
-              total={news.length}
+              total={filteredLocalNews.length}
               onChange={(page) => setCurrentPage(page)}
               showSizeChanger={false}
             />
@@ -65,7 +72,7 @@ const NewsList = () => {
 
         {/* ✅ International News Tab */}
         <Tabs.TabPane tab="International News" key="international">
-          { internationalNews.length === 0 ? (
+          {internationalNews.length === 0 ? (
             <Spin size="large" className="flex justify-center mt-10" />
           ) : internationalStatus === "failed" ? (
             <Alert message="Error" description={internationalError} type="error" showIcon />
@@ -77,12 +84,12 @@ const NewsList = () => {
             </div>
           )}
 
-          {/* ✅ International News Pagination */}
+          {/* Pagination */}
           <div className="flex justify-center mt-6">
             <Pagination
               current={currentPageInt}
-              pageSize={pageSize-1}
-              total={internationalNews.length}
+              pageSize={pageSize - 1}
+              total={filteredInternationalNews.length}
               onChange={(page) => setCurrentPageInt(page)}
               showSizeChanger={false}
             />
