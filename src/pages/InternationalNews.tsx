@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../redux/store";
@@ -6,10 +5,9 @@ import { fetchInternationalNews } from "../redux/features/newsSlice";
 import { Spin, Alert, Pagination } from "antd";
 import NewsCard from "../componenets/NewsCards";
 
-
 const InternationalNews = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { internationalNews, internationalStatus, internationalError } = useSelector(
+  const { internationalNews, internationalStatus, internationalError, searchQuery } = useSelector(
     (state: RootState) => state.news
   );
 
@@ -17,13 +15,20 @@ const InternationalNews = () => {
   const pageSize = 10;
 
   useEffect(() => {
-    dispatch(fetchInternationalNews()); // ✅ API Call to Fetch International News
-  }, [dispatch]);
+    if (internationalNews.length === 0) {
+      dispatch(fetchInternationalNews());
+    }
+  }, [dispatch, internationalNews.length]);
 
-  // ✅ Pagination Logic
+  // ✅ Filter news based on search query
+  const filteredNews = internationalNews.filter((item) =>
+    item.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // ✅ Pagination
   const indexOfLastNews = currentPage * pageSize;
   const indexOfFirstNews = indexOfLastNews - pageSize;
-  const currentInternationalNews = internationalNews.slice(indexOfFirstNews, indexOfLastNews);
+  const currentInternationalNews = filteredNews.slice(indexOfFirstNews, indexOfLastNews);
 
   return (
     <div className="p-4">
@@ -36,7 +41,12 @@ const InternationalNews = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentInternationalNews.map((item) => (
-            <NewsCard key={item.news_id} {...item} type="international" image_url={item.image_url || "default-image-url.jpg"} />
+            <NewsCard
+              key={item.news_id}
+              {...item}
+              type="international"
+              image_url={item.image_url || "default-image-url.jpg"}
+            />
           ))}
         </div>
       )}
@@ -46,7 +56,7 @@ const InternationalNews = () => {
         <Pagination
           current={currentPage}
           pageSize={pageSize}
-          total={internationalNews.length}
+          total={filteredNews.length}
           onChange={(page) => setCurrentPage(page)}
           showSizeChanger={false}
         />
