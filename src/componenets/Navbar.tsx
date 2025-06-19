@@ -59,6 +59,9 @@ const Navbar = () => {
           <li className="hover:text-gray-400 transition duration-300">
             <Link to="/international-news">International</Link>
           </li>
+          <li className="hover:text-gray-400 transition duration-300">
+            <Link to="/sentiment">Sentiment</Link> {/* New Sentiment Link */}
+          </li>
         </ul>
 
         {/* Search & Auth: visible from lg */}
@@ -109,7 +112,9 @@ const Navbar = () => {
           <Link to="/international-news" onClick={() => setIsOpen(false)} className="hover:text-gray-400">
             International
           </Link>
-
+          <Link to="/sentiment" onClick={() => setIsOpen(false)} className="hover:text-gray-400">
+            Sentiment
+          </Link> {/* New Sentiment Link */}
           <Input
             placeholder="Search news..."
             value={inputValue}

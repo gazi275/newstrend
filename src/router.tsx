@@ -8,6 +8,7 @@ import NewsDetails from "./pages/NewsDetails";
 import InternationalNews from "./pages/InternationalNews";
 import About from "./pages/About";
 import Team from "./pages/Team";
+import Sentiment from "./pages/sentiment";
 
 
 
@@ -20,10 +21,11 @@ const router = createBrowserRouter([
       { path: "login", element: <Login /> },
       { path: "signup", element: <SignUp /> },
       {path:"/about", element:<About/>},
-      {path:"/team", element:<Team/>},
+      {path:"/team", element:<Team/>},    
       { path:"/news/:newsId", element:<NewsDetails /> },
       { path:"/international-news", element:<InternationalNews/>} ,
-      { path:"/international-news/:newsId", element:<NewsDetails />} 
+      { path:"/international-news/:newsId", element:<NewsDetails />} ,
+      { path: "sentiment", element: <Sentiment /> },
     ],
   },
 ]);
