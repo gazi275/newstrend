@@ -20,11 +20,11 @@ const storeData = (key: string, items: any) => {
 export interface NewsItem {
   news_id: string;
   title: string;
-  content: string;
-  image_url?: string;
-  link?: string;
-  description?: string;
-  comments: string[];
+  content?: string;
+  image_url: string;
+  link: string;
+  description: string;
+    comments: { name: string; comment: string }[];
   userReaction?: string;
   reactions: { [key: string]: number };
   type: string;
@@ -32,7 +32,7 @@ export interface NewsItem {
 
 interface User {
   id: string;
-  username: string;
+  name: string;
   email: string;
 }
 
@@ -49,7 +49,7 @@ interface NewsState {
 }
 
 const initialState: NewsState = {
-  news: getStoredData("localNews") || [],
+  news:  [],
   internationalNews: getStoredData("internationalNews") || [],
   user: getStoredData("user") || null,
   status: "idle",
@@ -65,40 +65,35 @@ export const fetchNews = createAsyncThunk(
   "news/fetchNews",
   async (_, { rejectWithValue }) => {
     try {
-      const storedNews = getStoredData("localNews");
-      if (storedNews) return storedNews;
+      // hit your new endpoint
+      const response = await axios.get<{
+        success: boolean;
+        message: string;
+        data: any[];
+      }>("http://localhost:5000/api/v1/local/");
 
-      const response = await axios.get<{ results: any[] }>(
-        "https://news-backend-sigma.vercel.app/api/v1/news/bangladesh"
-      );
-      const newsList = response.data.results || [];
+      const newsList = response.data.data || [];
 
-      const formattedNews = newsList.map((news: any) => ({
-        news_id:
-          news.article_id ||
-          news.link ||
-          Math.random().toString(36).substr(2, 9),
+      const formattedNews: NewsItem[] = newsList.map((news: any) => ({
+        news_id: news._id,
         title: news.title,
-        content: news.content || "No content available",
-        image_url:
-          news.image_url ||
-          "https://media.istockphoto.com/id/1693840855/vector/blank-newspaper-front-page-template.jpg?s=2048x2048&w=is&k=20&c=I1U5L8yLW0EKRftclWcMwBSHWbYfN1LmFcefw2-9H7E=",
-        link: news.link,
         description: news.description || "No description available",
+        image_url:
+          news.image ||
+          "https://media.istockphoto.com/id/1693840855/vector/blank-newspaper-front-page-template.jpg",
+        link: news.link,
         comments: [],
         userReaction: undefined,
         reactions: {},
         type: "local",
       }));
 
-      storeData("localNews", formattedNews);
       return formattedNews;
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch local news");
     }
   }
 );
-
 // Fetch international news from your backend
 export const fetchInternationalNews = createAsyncThunk(
   "news/fetchInternationalNews",
@@ -108,7 +103,7 @@ export const fetchInternationalNews = createAsyncThunk(
       if (storedNews) return storedNews;
 
       const response = await axios.get(
-        "https://news-backend-sigma.vercel.app/api/v1/news/international"
+        "http://localhost:5000/api/v1/news/international"
       );
       const formattedNews = (response.data as { articles: any[] }).articles.map(
         (news: any) => ({
@@ -146,7 +141,7 @@ export const loginUser = createAsyncThunk(
   ) => {
     try {
       const response = await axios.post<{ data: any; user: User }>(
-        "https://news-backend-sigma.vercel.app/api/v1/auth/login",
+        "http://localhost:5000/api/v1/auth/login",
         credentials
       );
       const user = response.data.data.user;
@@ -170,7 +165,7 @@ export const signupUser = createAsyncThunk(
   ) => {
     try {
       const response = await axios.post<{ user: User }>(
-        "https://news-backend-sigma.vercel.app/api/v1/auth/signup",
+        "http://localhost:5000/api/v1/auth/signup",
         userData
       );
       storeData("user", response.data.user);
@@ -192,42 +187,47 @@ const newsSlice = createSlice({
       state.searchQuery = action.payload.toLowerCase();
     },
 
-    addComment: (
-      state,
-      action: PayloadAction<{ newsId: string; comment: string; type: string }>
-    ) => {
-      const newsList =
-        action.payload.type === "local" ? state.news : state.internationalNews;
-      const newsItem = newsList.find(
-        (news) => news.news_id === action.payload.newsId
-      );
-      if (newsItem) {
-        newsItem.comments.push(action.payload.comment);
-        storeData(`${action.payload.type}News`, newsList);
-      }
-    },
+   addComment: (
+  state,
+  action: PayloadAction<{ newsId: string; comment: string; type: string }>
+) => {
+  const newsList =
+    action.payload.type === "local" ? state.news : state.internationalNews;
+  const newsItem = newsList.find(
+    (news) => news.news_id === action.payload.newsId
+  );
+  if (newsItem) {
+    newsItem.comments.push({ name: state.user?.name || "Anonymous", comment: action.payload.comment });
+    if (action.payload.type === "international") {
+      storeData("internationalNews", state.internationalNews);
+    }
+  }
+},
     addReaction: (
-      state,
-      action: PayloadAction<{ newsId: string; reaction: string; type: string }>
-    ) => {
-      const newsList =
-        action.payload.type === "local" ? state.news : state.internationalNews;
-      const newsItem = newsList.find(
-        (news) => news.news_id === action.payload.newsId
-      );
-      if (newsItem) {
-        if (newsItem.userReaction) {
-          newsItem.reactions[newsItem.userReaction] -= 1;
-          if (newsItem.reactions[newsItem.userReaction] === 0) {
-            delete newsItem.reactions[newsItem.userReaction];
-          }
-        }
-        newsItem.userReaction = action.payload.reaction;
-        newsItem.reactions[action.payload.reaction] =
-          (newsItem.reactions[action.payload.reaction] || 0) + 1;
-        storeData(`${action.payload.type}News`, newsList);
+  state,
+  action: PayloadAction<{ newsId: string; reaction: string; type: string }>
+) => {
+  const newsList =
+    action.payload.type === "local" ? state.news : state.internationalNews;
+  const newsItem = newsList.find(
+    (news) => news.news_id === action.payload.newsId
+  );
+  if (newsItem) {
+    if (newsItem.userReaction) {
+      newsItem.reactions[newsItem.userReaction] -= 1;
+      if (newsItem.reactions[newsItem.userReaction] === 0) {
+        delete newsItem.reactions[newsItem.userReaction];
       }
-    },
+    }
+    newsItem.userReaction = action.payload.reaction;
+    newsItem.reactions[action.payload.reaction] =
+      (newsItem.reactions[action.payload.reaction] || 0) + 1;
+
+    if (action.payload.type === "international") {
+      storeData("internationalNews", state.internationalNews);
+    }
+  }
+},
     logoutUser: (state) => {
       state.user = null;
       localStorage.removeItem("user");

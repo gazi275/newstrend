@@ -8,7 +8,6 @@ import NewsCard from "./NewsCards";
 const NewsList = () => {
   const dispatch = useDispatch<AppDispatch>();
 
-  // Redux State
   const { news, status, error, searchQuery } = useSelector((state: RootState) => state.news);
   const { internationalNews, internationalStatus, internationalError } = useSelector(
     (state: RootState) => state.news
@@ -24,7 +23,6 @@ const NewsList = () => {
     if (internationalNews.length === 0) dispatch(fetchInternationalNews());
   }, [dispatch, news.length, internationalNews.length]);
 
-  // 🔍 Filter news based on search query
   const filteredLocalNews = news.filter((item) =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -32,19 +30,19 @@ const NewsList = () => {
     item.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Pagination for filtered news
-  const indexOfLastNews = currentPage * pageSize;
-  const indexOfFirstNews = indexOfLastNews - pageSize;
-  const currentNews = filteredLocalNews.slice(indexOfFirstNews, indexOfLastNews);
+  const currentNews = filteredLocalNews.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
-  const indexOfLastIntNews = currentPageInt * pageSize;
-  const indexOfFirstIntNews = indexOfLastIntNews - pageSize;
-  const currentInternationalNews = filteredInternationalNews.slice(indexOfFirstIntNews, indexOfLastIntNews);
+  const currentInternationalNews = filteredInternationalNews.slice(
+    (currentPageInt - 1) * pageSize,
+    currentPageInt * pageSize
+  );
 
   return (
     <div className="p-4">
       <Tabs activeKey={activeTab} onChange={setActiveTab} centered>
-        {/* ✅ Local News Tab */}
         <Tabs.TabPane tab="Local News" key="local">
           {status === "loading" && news.length === 0 ? (
             <Spin size="large" className="flex justify-center mt-10" />
@@ -53,12 +51,10 @@ const NewsList = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentNews.map((item) => (
-                <NewsCard key={item.news_id} {...item} type="local" image_url={item.image_url || "default-image-url.jpg"} />
+                <NewsCard key={item.news_id} {...item} type="local" image_url={item.image_url} />
               ))}
             </div>
           )}
-
-          {/* Pagination */}
           <div className="flex justify-center mt-6">
             <Pagination
               current={currentPage}
@@ -70,25 +66,27 @@ const NewsList = () => {
           </div>
         </Tabs.TabPane>
 
-        {/* ✅ International News Tab */}
         <Tabs.TabPane tab="International News" key="international">
-          {internationalNews.length === 0 ? (
+          {internationalNews.length === 0 && internationalStatus === "loading" ? (
             <Spin size="large" className="flex justify-center mt-10" />
           ) : internationalStatus === "failed" ? (
             <Alert message="Error" description={internationalError} type="error" showIcon />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentInternationalNews.map((item) => (
-                <NewsCard key={item.news_id} {...item} type="international" image_url={item.image_url || "default-image-url.jpg"} />
+                <NewsCard
+                  key={item.news_id}
+                  {...item}
+                  type="international"
+                  image_url={item.image_url}
+                />
               ))}
             </div>
           )}
-
-          {/* Pagination */}
           <div className="flex justify-center mt-6">
             <Pagination
               current={currentPageInt}
-              pageSize={pageSize - 1}
+              pageSize={pageSize}
               total={filteredInternationalNews.length}
               onChange={(page) => setCurrentPageInt(page)}
               showSizeChanger={false}

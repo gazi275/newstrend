@@ -8,6 +8,7 @@ import {
   FrownOutlined,
   MessageOutlined,
   UserOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import Picker from "@emoji-mart/react";
 import { Link } from "react-router-dom";
@@ -47,54 +48,70 @@ const NewsCard = ({ news_id, image_url, title, description, type = "local" }: Ne
 
   const comments = newsItem.comments || [];
   const reactionsData = newsItem.reactions || {};
-  const userReaction = Object.keys(reactionsData).find((r) => reactionsData[r] > 0) || null;
+  const userReaction = newsItem.userReaction || null;
 
   const handleComment = () => {
     if (commentInput.trim() !== "") {
       dispatch(addComment({ newsId: news_id, comment: commentInput, type }));
       setCommentInput("");
+      setShowCommentPicker(false);
     }
   };
 
   const handleReaction = (reaction: string) => {
-    if (!newsItem.reactions[reaction]) {
-      dispatch(addReaction({ newsId: news_id, reaction, type }));
-      setShowReactPicker(false);
-    }
+    dispatch(addReaction({ newsId: news_id, reaction, type }));
+    setShowReactPicker(false);
   };
 
   const encodedId = encodeURIComponent(news_id);
   const newsLink = type === "international" ? `/international-news/${encodedId}` : `/news/${news_id}`;
 
   return (
-    <Card hoverable className="relative shadow-lg rounded-xl">
-      <Link to={newsLink} className="block">
-        <img alt={title} src={image_url} className="h-60 w-full object-cover rounded-t-xl" />
+    <Card
+      hoverable
+      className="relative w-full max-w-xl mx-auto bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl"
+    >
+      <Link to={newsLink}>
+        <img
+          alt={title}
+          src={image_url}
+          className="h-48 w-full object-cover rounded-t-2xl"
+        />
       </Link>
 
-      <div className="flex items-center gap-3 mb-3">
-        <Avatar size="large" icon={<UserOutlined />} />
-        <div>
-          <Link to={newsLink} className="text-lg font-semibold hover:underline">
+      <div className="flex items-center gap-4 p-4">
+        <Avatar size={48} icon={<UserOutlined />} className="bg-blue-500 text-white" />
+        <div className="flex-1">
+          <Link to={newsLink} className="text-xl font-bold text-gray-800 hover:text-blue-600">
             {title}
           </Link>
-          <p className="text-gray-500 text-sm">{type === "local" ? "Published Today" : "International News"}</p>
+          <p className="text-gray-500 text-sm">
+            {type === "local" ? "Published Today" : "International News"}
+          </p>
         </div>
       </div>
 
-      <p className="text-gray-600">{description?.slice(0, 100)}...</p>
+      <p className="p-4 text-gray-700 text-base leading-relaxed">
+        {description?.slice(0, 100)}...
+      </p>
 
-      <div className="flex justify-between items-center mt-4">
+      <div className="p-4 flex justify-between items-center border-t border-gray-100">
         <div className="relative">
-          <Tooltip title="React">
-            <Button onClick={() => setShowReactPicker(!showReactPicker)}>
-              {userReaction ? userReaction : <LikeOutlined />}
-            </Button>
+          <Tooltip title="React" color="#1890ff">
+            <Button
+              icon={userReaction ? reactions.find((r) => r.emoji === userReaction)?.icon : <LikeOutlined />}
+              className="bg-blue-50 hover:bg-blue-100 text-blue-600"
+              onClick={() => setShowReactPicker(!showReactPicker)}
+            />
           </Tooltip>
           {showReactPicker && (
-            <div className="absolute bg-white shadow-lg rounded-md p-2 flex gap-2 border z-50" style={{ bottom: "100%", left: "0%" }}>
+            <div className="absolute bottom-full left-0 mb-2 bg-white shadow-xl rounded-xl p-2 flex gap-2 border border-gray-200 z-50">
               {reactions.map((react) => (
-                <Button key={react.name} onClick={() => handleReaction(react.emoji)}>
+                <Button
+                  key={react.name}
+                  onClick={() => handleReaction(react.emoji)}
+                  className="bg-gray-50 hover:bg-gray-100"
+                >
                   {react.emoji} {reactionsData[react.emoji] || 0}
                 </Button>
               ))}
@@ -102,30 +119,52 @@ const NewsCard = ({ news_id, image_url, title, description, type = "local" }: Ne
           )}
         </div>
 
-        <Tooltip title="Comment">
-          <Button icon={<MessageOutlined />}>{comments.length}</Button>
+        <Tooltip title="Comment" color="#1890ff">
+          <Button icon={<MessageOutlined />} className="bg-green-50 hover:bg-green-100 text-green-600">
+            {comments.length}
+          </Button>
         </Tooltip>
       </div>
 
-      <div className="mt-4">
+      <div className="p-4 bg-gray-50 rounded-b-2xl relative">
         <Input.TextArea
           value={commentInput}
           onChange={(e) => setCommentInput(e.target.value)}
           placeholder="Write a comment..."
           autoSize={{ minRows: 2, maxRows: 4 }}
         />
-        <Button onClick={() => setShowCommentPicker(!showCommentPicker)}>😀</Button>
-        {showCommentPicker && (
-          <Picker onEmojiSelect={(e: { native: string }) => setCommentInput(commentInput + e.native)} />
-        )}
-        <Button type="primary" className="mt-2 w-full" onClick={handleComment}>
-          Add Comment
-        </Button>
-      </div>
+        <div className="flex gap-2 mt-2 items-center">
+          <Button onClick={() => setShowCommentPicker(!showCommentPicker)}>
+            😀
+          </Button>
+          {showCommentPicker && (
+            <div className="absolute mt-2 right-0 bg-white shadow-xl rounded-xl p-2 border border-gray-200 z-50">
+              <Button
+                icon={<CloseOutlined />}
+                className="absolute top-2 right-2 bg-red-100 hover:bg-red-200 text-red-600"
+                onClick={() => setShowCommentPicker(false)}
+              />
+              <Picker
+                onEmojiSelect={(e: { native: string }) => setCommentInput(commentInput + e.native)}
+                theme="light"
+              />
+            </div>
+          )}
+          <Button
+            type="primary"
+            className="ml-auto bg-blue-600 hover:bg-blue-700 text-white"
+            onClick={handleComment}
+          >
+            Add Comment
+          </Button>
+        </div>
 
-      {comments.slice(-3).map((comment, index) => (
-        <p key={index} className="text-gray-800 text-sm mt-1">{comment}</p>
-      ))}
+       {comments.slice(-3).map((item, index) => (
+  <p key={index} className="text-gray-800 text-sm mt-2 bg-white p-2 rounded-lg shadow-sm">
+    <span className="font-semibold text-blue-600">{item.name}:</span> {item.comment}
+  </p>
+))}
+      </div>
     </Card>
   );
 };

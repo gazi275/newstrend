@@ -1,6 +1,6 @@
 import { Button } from "antd";
 import { motion } from "framer-motion";
-import { PlayCircleOutlined } from "@ant-design/icons";
+
 
 const Banner = () => {
   return (
@@ -48,19 +48,11 @@ const Banner = () => {
               type="primary"
               className="bg-blue-600 hover:bg-blue-800 text-white px-6 py-3 text-lg font-semibold rounded-lg transition-all"
             >
-              Explore Now
+              Explore Now 
             </Button>
           </motion.div>
 
-          <motion.div
-            whileHover={{ scale: 1.1 }}
-            className="flex items-center space-x-2 cursor-pointer"
-          >
-            <PlayCircleOutlined className="text-3xl text-gray-300" />
-            <span className="text-lg text-gray-300 hover:text-white">
-              Watch Highlights
-            </span>
-          </motion.div>
+          
         </div>
       </motion.div>
     </div>
